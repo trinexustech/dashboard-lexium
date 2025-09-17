@@ -13,212 +13,227 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* --- UPDATED: New Color Scheme and UI Styles --- */
+        :root {
+            --color-primary: #1E40AF;   /* Deep EU Blue */
+            --color-secondary: #06B6D4; /* Teal-Cyan */
+            --color-accent: #9333EA;    /* Purple */
+            --color-bg-light: #F9FAFB;
+            --color-bg-panel: #E5E7EB;
+            --color-text-dark: #111827;
+            --color-text-light: #6B7280;
+            --color-status-green: #16A34A;
+            --color-status-yellow: #CA8A04;
+            --color-status-red: #DC2626;
+            --gradient-header: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+        }
+
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-light);
+            color: var(--color-text-dark);
         }
-        /* --- NEW: Styles for the Generation Wizard --- */
-        .wizard-overlay {
-            transition: opacity 0.3s ease-in-out;
-        }
-        .wizard-container {
-            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-        }
-        @keyframes pulse-bg {
-            0%, 100% { background-color: rgba(37, 99, 235, 0.1); }
-            50% { background-color: rgba(37, 99, 235, 0.2); }
-        }
-        .generating-animation {
-            animation: pulse-bg 2s infinite;
+
+        .gradient-header-text {
+            background: var(--gradient-header);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
     </style>
 </head>
-<body class="bg-slate-900">
+<body class="antialiased">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
         // --- ICONS ---
-        const DashboardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>;
-        const AiRiskIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>;
-        const DpiaIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
-        const DsarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>;
-        const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
-        const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
-        const BackIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
+        const DashboardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>;
+        const AiRiskIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>;
+        const DpiaIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+        const DsarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>;
+        const RopaIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
+        const TransferIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z"></path><path d="M12 2a10 10 0 0 0-3.3 19.4"></path><path d="M12 22a10 10 0 0 1-3.3-19.4"></path></svg>;
+        const VendorIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
+        const ConsentIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>;
+        const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
+        const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+        const NotificationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
+
 
         // --- MOCK DATA ---
         const moduleData = {
-            'ai-risk': { 
-                name: 'AI Risk & Audit', 
-                status: 'Needs Attention', 
-                summary: '1 AI system requires conformity assessment.',
-                items: [
-                    { id: 'ai1', name: 'Marketing Analytics AI', conformity: 'Required', transparency: 'Compliant', log: '2025-09-14: New model detected.' }
-                ]
-            },
-            'dpia': { 
-                name: 'DPIA Generator', 
-                status: 'Compliant', 
-                summary: '3 active DPIAs, none required.',
-                items: [
-                    { id: 'dpia1', name: 'Customer Data Platform DPIA', status: 'Completed', risk: 'Low', log: '2025-08-20: Approved by DPO.' }
-                ]
-            },
-            'dsar': { 
-                name: 'DSAR Workflow', 
-                status: 'Compliant', 
-                summary: '0 pending requests.',
-                items: [
-                    { id: 'dsar1', name: 'Request from J. Doe', status: 'Completed', deadline: '2025-09-01', log: '2025-08-28: Response sent.' }
-                ]
-            },
+            'dashboard': { name: 'Dashboard', icon: <DashboardIcon /> },
+            'ai-risk': { name: 'AI Risk & Audit', icon: <AiRiskIcon />, status: 'Needs Attention', summary: '1 AI system requires conformity assessment.' },
+            'dpia': { name: 'DPIA Generator', icon: <DpiaIcon />, status: 'Compliant', summary: '3 active DPIAs, none required.' },
+            'ropa': { name: 'ROPA Tracker', icon: <RopaIcon />, status: 'Compliant', summary: '12 Processing Activities logged.' },
+            'transfer': { name: 'Transfer Risk Analyzer', icon: <TransferIcon />, status: 'Compliant', summary: 'All data transfers are compliant.' },
+            'vendor': { name: 'Vendor Compliance', icon: <VendorIcon />, status: 'Needs Attention', summary: '1 vendor DPA is pending review.' },
+            'consent': { name: 'Consent & Cookie Manager', icon: <ConsentIcon />, status: 'Compliant', summary: 'Consent banner is active.' },
+            'dsar': { name: 'DSAR Workflow', icon: <DsarIcon />, status: 'Compliant', summary: '0 pending requests.' },
         };
+        const timelineData = [
+            { date: 'Sep 17, 2025', update: 'EDPB releases new guidelines on AI data processing.', impact: ['AI Risk & Audit', 'DPIA'] },
+            { date: 'Sep 15, 2025', update: 'Your AI Risk module flagged a new unaudited AI system.', impact: ['AI Risk & Audit'] },
+            { date: 'Sep 14, 2025', update: 'Vendor "AnalyticsCorp" DPA has been added and requires review.', impact: ['Vendor Compliance'] },
+        ];
 
         // --- HELPER FUNCTIONS ---
         const getModuleStatusIndicator = (status) => {
              switch (status) {
-                case 'Compliant': return <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div><span className="text-green-400 text-sm font-medium">Compliant</span></div>;
-                case 'Needs Attention': return <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div><span className="text-yellow-400 text-sm font-medium">Needs Attention</span></div>;
-                default: return <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-slate-500"></div><span className="text-slate-400 text-sm font-medium">{status}</span></div>;
+                case 'Compliant': return <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor: 'var(--color-status-green)'}}></div><span className="text-sm font-medium" style={{color: 'var(--color-status-green)'}}>Compliant</span></div>;
+                case 'Needs Attention': return <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor: 'var(--color-status-yellow)'}}></div><span className="text-sm font-medium" style={{color: 'var(--color-status-yellow)'}}>Needs Attention</span></div>;
+                default: return <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor: '#6B7280'}}></div><span className="text-sm font-medium" style={{color: '#6B7280'}}>{status}</span></div>;
             }
         };
 
         // --- AUTH & VIEW COMPONENTS ---
         const LoginPrompt = ({ onLogin }) => (
-            <div className="flex flex-col items-center justify-center min-h-screen text-center text-white p-4">
-                <h1 className="text-4xl font-bold">Access Denied</h1>
-                <p className="text-slate-400 mt-2">Please log in via our main website to access your dashboard.</p>
-                <a href="https://trinexustech.github.io/lexium" className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-500 transition-colors">Return to Homepage</a>
-                <div className="mt-8 border-t border-slate-700 pt-6 text-sm text-slate-500">
+            <div className="flex flex-col items-center justify-center min-h-screen text-center bg-gray-100 p-4">
+                <h1 className="text-4xl font-bold text-gray-800">Access Denied</h1>
+                <p className="text-gray-600 mt-2">Please log in via our main website to access your dashboard.</p>
+                <a href="https://trinexustech.github.io/lexium" className="mt-6 bg-blue-700 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transition-colors">Return to Homepage</a>
+                <div className="mt-8 border-t border-gray-300 pt-6 text-sm text-gray-500">
                     <p>For MVP demonstration purposes only:</p>
-                    <button onClick={onLogin} className="mt-2 text-blue-400 underline hover:text-blue-300">Simulate Login</button>
+                    <button onClick={onLogin} className="mt-2 text-blue-600 underline hover:text-blue-500">Simulate Login</button>
                 </div>
             </div>
         );
         
-        // --- DASHBOARD & MODULE COMPONENTS ---
-        const DashboardView = ({ userEmail, onNavigate }) => (
-             <div>
-                <header className="mb-8">
-                    <h1 className="text-3xl font-bold text-white">Compliance Dashboard</h1>
-                    <p className="text-slate-400 mt-1">Welcome back, {userEmail}! Here is your real-time compliance status.</p>
-                </header>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                   {Object.keys(moduleData).map(key => {
-                       const module = moduleData[key];
-                       return (
-                           <div key={key} className="bg-[#0D1117] border border-slate-800 rounded-xl p-6 flex flex-col hover:border-blue-500 transition-colors">
-                                <h2 className="text-lg font-semibold text-white mb-2">{module.name}</h2>
-                                {getModuleStatusIndicator(module.status)}
-                                <p className="text-sm text-slate-300 mt-4 flex-grow">{module.summary}</p>
-                                <button onClick={() => onNavigate(key)} className="mt-4 w-full bg-slate-700 text-white p-2.5 rounded-md font-semibold hover:bg-slate-600 transition-colors text-sm">Open Module</button>
-                           </div>
-                       );
-                   })}
+        // --- UI COMPONENTS ---
+        const SideNav = ({ activeModule, onNavigate }) => (
+             <aside className="w-64 bg-white p-6 flex flex-col justify-between border-r border-gray-200">
+                <div>
+                    <div className="flex items-center space-x-2.5 mb-10">
+                        <div className="w-8 h-8 flex flex-col justify-between">
+                            <div className="h-2.5 w-full rounded-full" style={{backgroundColor: 'var(--color-secondary)'}}></div>
+                            <div className="h-2.5 w-2/3 self-end rounded-full" style={{backgroundColor: 'var(--color-primary)'}}></div>
+                            <div className="h-2.5 w-full rounded-full" style={{backgroundColor: 'var(--color-secondary)'}}></div>
+                        </div>
+                        <span className="font-bold text-xl" style={{color: 'var(--color-text-dark)'}}>Lexium AI</span>
+                    </div>
+                    <nav className="space-y-1">
+                        {Object.keys(moduleData).map(key => (
+                            <button key={key} onClick={() => onNavigate(key)}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-semibold ${activeModule === key ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+                                {moduleData[key].icon}
+                                <span>{moduleData[key].name}</span>
+                            </button>
+                        ))}
+                    </nav>
                 </div>
-             </div>
+                <nav className="space-y-1">
+                    <button onClick={() => onNavigate('settings')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-semibold ${activeModule === 'settings' ? 'bg-blue-100 text-blue-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+                        <SettingsIcon />
+                        <span>Settings</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg text-sm font-semibold">
+                        <LogoutIcon />
+                        <span>Logout</span>
+                    </button>
+                </nav>
+            </aside>
         );
 
-        const AiRiskModuleView = ({ module, onBack }) => (
-            <div>
-                 <header className="mb-8">
-                    <button onClick={onBack} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white mb-4"><BackIcon /> Back to Dashboard</button>
-                    <h1 className="text-3xl font-bold text-white">{module.name}</h1>
-                    <p className="text-slate-400 mt-1">Monitor your AI systems and generate AI Act conformity reports.</p>
+        const TopBar = ({ userEmail }) => (
+            <header className="flex-1 h-20 flex items-center justify-between px-8 border-b border-gray-200 bg-white">
+                <div className="flex items-center gap-4">
+                     <h1 className="text-xl font-bold text-gray-800 capitalize">{/* This could be dynamic based on view */}</h1>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button style={{background: 'var(--gradient-header)'}} className="text-white px-4 py-2 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity">New DPIA</button>
+                    <button className="text-gray-500 hover:text-gray-800"><NotificationIcon /></button>
+                    <div className="text-right">
+                        <p className="font-semibold text-sm text-gray-800">{userEmail}</p>
+                        <p className="text-xs text-gray-500">Innovate EU GmbH</p>
+                    </div>
+                </div>
+            </header>
+        );
+
+        // --- DASHBOARD & MODULE COMPONENTS ---
+        const DashboardOverview = ({ userEmail, onNavigate }) => (
+             <div className="p-8">
+                <header className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-800">Compliance Command Center</h1>
+                    <p className="text-gray-600 mt-1">Welcome back, {userEmail}! Here is your real-time compliance status.</p>
                 </header>
-                <div className="bg-[#0D1117] border border-slate-800 rounded-xl p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4">Monitored AI Systems</h2>
-                    <div className="bg-slate-800/50 p-4 rounded-lg">
-                        <p className="font-semibold text-white">{module.items[0].name}</p>
-                        <div className="mt-2 text-sm text-slate-300 space-y-1">
-                            <p><span className="font-medium text-slate-400">Conformity Assessment:</span> <span className="text-yellow-400 font-bold">{module.items[0].conformity}</span></p>
-                            <p><span className="font-medium text-slate-400">Transparency Report:</span> <span className="text-green-400">{module.items[0].transparency}</span></p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-4">Module Status</h2>
+                        <div className="grid grid-cols-2 gap-6">
+                           {Object.keys(moduleData).filter(k => k !== 'dashboard').map(key => {
+                               const module = moduleData[key];
+                               return (
+                                   <div key={key} onClick={() => onNavigate(key)} className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100">
+                                        <h3 className="font-semibold text-gray-800">{module.name}</h3>
+                                        <div className="mt-2">{getModuleStatusIndicator(module.status)}</div>
+                                        <p className="text-xs text-gray-500 mt-2">{module.summary}</p>
+                                   </div>
+                               );
+                           })}
                         </div>
-                        <div className="mt-3 border-t border-slate-700 pt-3">
-                            <p className="text-sm font-semibold text-blue-400">Latest AI Log Entry:</p>
-                            <p className="text-sm text-slate-400 font-mono">{module.items[0].log}</p>
-                            <p className="text-sm text-yellow-400 mt-2"><b>[AI Recommendation]:</b> A conformity assessment is required for this high-risk AI system under the AI Act. <span className="underline cursor-pointer">Generate Assessment</span></p>
+                    </div>
+                    <div className="space-y-8">
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h2 className="text-lg font-semibold text-gray-800 mb-2">Overall Compliance</h2>
+                            <p className="text-4xl font-bold gradient-header-text">73%</p>
+                            <p className="text-sm text-gray-500 mt-1">Your score has improved by 5% this month.</p>
+                        </div>
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h2 className="text-lg font-semibold text-gray-800 mb-4">Updates & Alerts</h2>
+                            <ul className="space-y-4">
+                               {timelineData.map((item, index) => (
+                                   <li key={index} className="text-sm">
+                                       <p className="font-semibold text-gray-700">{item.update}</p>
+                                       <p className="text-xs text-gray-500">{item.date}</p>
+                                   </li>
+                               ))}
+                            </ul>
                         </div>
                     </div>
                 </div>
-            </div>
+             </div>
         );
         
-        const PlaceholderModuleView = ({ module, onBack }) => (
-             <div>
+        const PlaceholderModuleView = ({ moduleKey, onBack }) => {
+            const module = moduleData[moduleKey];
+            return (
+             <div className="p-8">
                  <header className="mb-8">
-                    <button onClick={onBack} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white mb-4"><BackIcon /> Back to Dashboard</button>
-                    <h1 className="text-3xl font-bold text-white">{module.name}</h1>
-                     <p className="text-slate-400 mt-1">{module.summary}</p>
+                    <h1 className="text-3xl font-bold text-gray-800">{module.name}</h1>
+                     <p className="text-gray-600 mt-1">{module.summary}</p>
                 </header>
-                <div className="bg-[#0D1117] border border-slate-800 rounded-xl p-16 text-center">
-                    <h2 className="text-xl font-semibold text-white">Module Coming Soon</h2>
-                    <p className="text-slate-400 mt-2">The interface for the {module.name} module is under development.</p>
+                <div className="bg-white border border-gray-200 rounded-xl p-16 text-center">
+                    <h2 className="text-xl font-semibold text-gray-800">Module Coming Soon</h2>
+                    <p className="text-gray-500 mt-2">The interface for the {module.name} module is under development.</p>
                 </div>
             </div>
-        );
+            )
+        };
 
 
         const DashboardContainer = ({ userEmail, onLogout }) => {
-            const [activeView, setActiveView] = useState('dashboard');
+            const [activeModule, setActiveModule] = useState('dashboard');
 
             const renderView = () => {
-                if (activeView === 'dashboard') {
-                    return <DashboardView userEmail={userEmail} onNavigate={setActiveView} />;
+                switch (activeModule) {
+                    case 'dashboard':
+                        return <DashboardOverview userEmail={userEmail} onNavigate={setActiveModule} />;
+                    default:
+                        return <PlaceholderModuleView moduleKey={activeModule} />;
                 }
-                if (activeView === 'settings') {
-                    return <div className="text-white">Settings Page Coming Soon</div>;
-                }
-
-                const module = moduleData[activeView];
-                if (!module) return <DashboardView userEmail={userEmail} onNavigate={setActiveView} />; // Fallback
-                
-                // Specific view for AI Risk, placeholder for others
-                if (activeView === 'ai-risk') {
-                    return <AiRiskModuleView module={module} onBack={() => setActiveView('dashboard')} />;
-                }
-                return <PlaceholderModuleView module={module} onBack={() => setActiveView('dashboard')} />;
             };
             
-            const NavLink = ({ viewName, children, icon }) => (
-              <button
-                onClick={() => setActiveView(viewName)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${activeView === viewName ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-              >
-                {icon}
-                <span className="font-semibold text-sm">{children}</span>
-              </button>
-            );
-
             return (
-                <div className="bg-slate-900 text-slate-300 min-h-screen flex font-sans">
-                    <aside className="w-64 bg-[#0D1117] p-6 flex flex-col justify-between border-r border-slate-800">
-                        <div>
-                            <div className="flex items-center space-x-2.5 mb-10">
-                                <div className="w-7 h-7 flex flex-col justify-between">
-                                    <div className="h-2 w-full bg-sky-400 rounded-full"></div>
-                                    <div className="h-2 w-2/3 bg-blue-600 rounded-full self-end"></div>
-                                    <div className="h-2 w-full bg-sky-400 rounded-full"></div>
-                                </div>
-                                <span className="font-bold text-xl text-white">Lexium AI</span>
-                            </div>
-                            <nav className="space-y-2">
-                                <NavLink viewName="dashboard" icon={<DashboardIcon />}>Dashboard</NavLink>
-                                <NavLink viewName="ai-risk" icon={<AiRiskIcon />}>AI Risk & Audit</NavLink>
-                                <NavLink viewName="dpia" icon={<DpiaIcon />}>DPIA Generator</NavLink>
-                                <NavLink viewName="dsar" icon={<DsarIcon />}>DSAR Workflow</NavLink>
-                            </nav>
-                        </div>
-                        <nav className="space-y-2">
-                           <NavLink viewName="settings" icon={<SettingsIcon />}>Settings</NavLink>
-                            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg"><LogoutIcon /><span className="font-semibold text-sm">Logout</span></button>
-                        </nav>
-                    </aside>
-
-                    <main className="flex-1 p-8">
-                        {renderView()}
-                    </main>
+                <div className="min-h-screen flex font-sans">
+                    <SideNav activeModule={activeModule} onNavigate={setActiveModule} />
+                    <div className="flex-1 flex flex-col">
+                       <TopBar userEmail={userEmail} />
+                       <main className="flex-1 bg-gray-100">
+                          {renderView()}
+                       </main>
+                    </div>
                 </div>
             );
         };
